@@ -18,6 +18,8 @@ RunStrategy=Throughput
 
 ## ConcurrentSkipList: Large-Scale Concurrent Insertion Results in Console Application
 ----------------Lock-Free Concurrent Skip List----------------
-Method       RecordCount    ThreadCount   Mean
-AddOrUpdate  10000          100           1532ms
-AddOrUpdate  10000          1000          13215ms
+
+| Method         | RecordCount  | ThreadCount | Mean    |
+|--------------- |------------  |------------ |--------:|
+| AddOrUpdate    | 10000        | 100         |  1532ms |
+| AddOrUpdate    | 10000        | 1000        | 13215ms |
