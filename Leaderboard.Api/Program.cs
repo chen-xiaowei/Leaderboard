@@ -1,4 +1,6 @@
 
+using Leaderboard.Services;
+
 namespace Leaderboard.Api
 {
     public class Program

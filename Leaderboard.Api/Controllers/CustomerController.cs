@@ -1,3 +1,4 @@
+using Leaderboard.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Leaderboard.Api;

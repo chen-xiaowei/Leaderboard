@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Leaderboard.Api;
+namespace Leaderboard.Services;
 
 public class Customer
 {

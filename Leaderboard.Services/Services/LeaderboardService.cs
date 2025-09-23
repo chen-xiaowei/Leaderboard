@@ -1,4 +1,4 @@
-﻿namespace Leaderboard.Api;
+﻿namespace Leaderboard.Services;
 
 public class LeaderboardService : ILeaderboardService
 {

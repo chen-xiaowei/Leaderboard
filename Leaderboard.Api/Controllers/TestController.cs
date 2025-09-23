@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Leaderboard.Services;
+using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
 
 namespace Leaderboard.Api;
 
@@ -40,6 +42,20 @@ public class TestController : Controller
         return Ok("Success");
     }
 
+    [HttpPost("create/data/multithreads")]
+    public async Task<IActionResult> MultiThreads()
+    {
+        try
+        {
+            await RunMultiThreads();
+            return Ok("Success");
+        }
+        catch (Exception ex) 
+        {
+            return BadRequest($"Failed: {ex.Message}");
+        }
+    }
+
     private List<Customer> GetDemoData()
     {
         return new List<Customer> 
@@ -75,5 +91,55 @@ public class TestController : Controller
         }
 
         return result;
+    }
+
+    private async Task RunMultiThreads()
+    {
+        // Arrange
+        //var skipList = new ConcurrentSkipList();
+        //var skipList = new CasSkipList();
+        //var skipList = new LockFreeConcurrentSkipList();
+        int threadCount = Environment.ProcessorCount * 2;
+        //int threadCount = 5;
+        //int[] recordCount = new[] { 1000, 2000, 4000, 8000 };
+        int[] recordCount = new[] { 8 };
+        var executionTimes = new Dictionary<int, double>();
+
+        var writerTasks = new List<Task>();
+
+        try
+        {
+            foreach (var count in recordCount)
+            {
+                var stopwatch = Stopwatch.StartNew();
+                // Writer tasks
+                for (int i = 0; i < threadCount; i++)
+                {
+                    writerTasks.Add(Task.Run(() =>
+                    {
+                        var random = new Random();
+                        for (int j = 0; j < count; j++)
+                        {
+                            long customerId = random.Next(1, count);
+                            decimal score = random.Next(-1000, 1000);
+                            _leaderboardService.UpdateScore(customerId, score);
+                        }
+                    }));
+                }
+
+                // Wait for writers to complete
+                await Task.WhenAll(writerTasks);
+
+                stopwatch.Stop();
+                executionTimes.Add(count, stopwatch.ElapsedMilliseconds);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+        }
+
+
+        //Print("Update Score", threadCount, executionTimes);
     }
 }
