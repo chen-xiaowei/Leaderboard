@@ -136,11 +136,9 @@ public class ConcurrentSkipList
         return (true, newNode.Score);
     }
 
-    public (decimal Score, int Rank)? GetScoreAndRank(long customerId)
+    public List<Customer> GetCustomersById(long customerId, int high, int low)
     {
-        if (Count == 0) return null;
-
-        if (!_cache.TryGetValue(customerId, out decimal oldScore)) return null;
+        if (_count == 0 || !_cache.TryGetValue(customerId, out decimal oldScore)) return [];
 
         Node current = _head;
         int rank = 0;
@@ -156,44 +154,95 @@ public class ConcurrentSkipList
             }
         }
 
-        return current.Next[0] != null &&
-               current.Next[0].CustomerId == customerId
-            ? (current.Next[0].Score, rank + 1)
-            : null;
+        Node target = current.Next[0];
+        if (current.Next[0] == null ||
+               current.Next[0].CustomerId != customerId)
+        {
+            return [];
+        }
+        rank++;
+
+        int capacity = 1 + Math.Max(0, Math.Min(high, rank - 1)) + Math.Min(low, _count - rank);
+        var result = new List<Customer>(capacity);
+
+        if (high > 0)
+        {
+            int highStart = Math.Max(1, rank - high);
+            int highEnd = rank - 1;
+            if (highEnd >= highStart)
+            {
+                var highNodes = GetRange(highStart, highEnd);
+                if (highNodes.Count > 0)
+                {
+                    result.AddRange(highNodes);
+                }
+            }
+        }
+
+        result.Add(new Customer
+        {
+            CustomerId = target.CustomerId,
+            Score = target.Score,
+            Rank = rank
+        });
+
+        if (low > 0)
+        {
+            int lowStart = rank + 1;
+            int lowEnd = Math.Min(rank + low, _count);
+            Node lowNode = target.Next[0];
+            while (lowNode != null && lowStart <= lowEnd)
+            {
+                result.Add(new Customer
+                {
+                    CustomerId = lowNode.CustomerId,
+                    Score = lowNode.Score,
+                    Rank = lowStart
+                });
+                lowNode = lowNode.Next[0];
+                lowStart++;
+            }
+        }
+
+        return result;
     }
 
     public List<Customer> GetRange(int start, int end)
     {
-        if (Count == 0) return [];
+        if (_count == 0 || start > end || start > _count) return [];
 
         var result = new List<Customer>(Math.Min(end - start + 1, Count));
         Node current = _head;
-        int currentRank = 0;
+        int rank = 0;
 
         // Move to the node's start position
         for (var i = _level - 1; i >= 0; i--)
         {
-            while (current.Next[i] != null && currentRank + current.Span[i] <= start)
+            while (current.Next[i] != null && rank + current.Span[i] <= start)
             {
-                currentRank += current.Span[i];
+                rank += current.Span[i];
                 current = current.Next[i];
             }
         }
 
-        // Iterate until the end postion
-        while (current != null && currentRank <= end)
+        if (rank < start)
         {
-            if (currentRank >= start)
-            {
-                result.Add(new Customer
-                {
-                    CustomerId = current.CustomerId,
-                    Score = current.Score,
-                    Rank = currentRank
-                });
-            }
             current = current.Next[0];
-            currentRank++;
+            rank++;
+        }
+
+        // Iterate until the end postion
+        while (current != null && rank <= end)
+        {
+            result.Add(new Customer
+            {
+                CustomerId = current.CustomerId,
+                Score = current.Score,
+                Rank = rank
+            });
+
+            current = current.Next[0];
+            rank++;
         }
 
         return result;
