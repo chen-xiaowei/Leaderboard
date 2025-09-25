@@ -136,7 +136,7 @@ public class ConcurrentSkipList
         return (true, newNode.Score);
     }
 
-    public List<Customer> GetCustomersById(long customerId, int high, int low)
+    public List<Customer> GetCustomersById(long customerId, int high = 0, int low = 0)
     {
         if (_count == 0 || !_cache.TryGetValue(customerId, out decimal oldScore)) return [];
 

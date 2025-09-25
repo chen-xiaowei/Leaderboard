@@ -46,14 +46,14 @@ public class ConcurrentSkipListTests
             {
                 var random = new Random();
 
-                // Test GetScoreAndRank
+                // Test GetCustomersById
                 long customerId = random.Next(1, customerCount + 1);
-                var result = skipList.GetScoreAndRank(customerId);
+                var result = skipList.GetCustomersById(customerId);
 
-                if (result != null)
+                if (result.Count > 0)
                 {
                     skipList.Cache.TryGetValue(customerId, out decimal expectedScore);
-                    Assert.Equal(expectedScore, result.Value.Score);
+                    Assert.Equal(expectedScore, result.FirstOrDefault()!.Score);
                 }
 
                 // Test GetRange 
@@ -78,17 +78,18 @@ public class ConcurrentSkipListTests
         // Data consistency checking
         foreach (var expected in skipList.Cache)
         {
-            var actual = skipList.GetScoreAndRank(expected.Key);
+            var result = skipList.GetCustomersById(expected.Key);
+            var actual = result.FirstOrDefault();
             Assert.NotNull(actual);
-            Assert.Equal(expected.Value, actual.Value.Score);
+            Assert.Equal(expected.Value, actual.Score);
 
             // Verify rank
-            if (actual.Value.Rank > 2)
+            if (actual.Rank > 2)
             {
-                var higherScore = skipList.GetRange(actual.Value.Rank - 1, actual.Value.Rank - 1).FirstOrDefault();
+                var higherScore = skipList.GetRange(actual.Rank - 1, actual.Rank - 1).FirstOrDefault();
                 if (higherScore != null)
                 {
-                    Assert.True(higherScore.Score >= actual.Value.Score);
+                    Assert.True(higherScore.Score >= actual.Score);
                 }
             }
         }
